@@ -1,31 +1,29 @@
-from django.contrib import admin
-from .models import Student, Module, Enrollment
+from django.db import models
 
-# Inline for Enrollments
-class EnrollmentInline(admin.TabularInline):
-    model = Enrollment
-    extra = 1  # Number of empty forms to show
-    raw_id_fields = ('student', 'module')  # Use raw id fields for foreign key selections (optional)
+class Student(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    date_of_birth = models.DateField(null=True)
+    year_group = models.CharField(max_length=1)
 
-# Admin for Student
-@admin.register(Student)
-class StudentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'first_name', 'last_name', 'email', 'date_of_birth', 'year_group')  # Customize based on your fields
-    list_filter = ('year_group', 'date_of_birth')  # Filter by year_group and date_of_birth
-    search_fields = ('first_name', 'last_name', 'email')  # Search by first name, last name, and email
-    inlines = [EnrollmentInline]  # Add inline for Enrollment to show Enrollments under Student
+    def __str__(self):
+        return f"{self.last_name}, {self.first_name}"
 
-# Admin for Module
-@admin.register(Module)
-class ModuleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'module_code', 'currently_enrolled')  # Customize based on your fields
-    list_filter = ('currently_enrolled',)  # Filter by currently_enrolled status
-    search_fields = ('title', 'module_code', 'description')  # Search by title, module code, or description
-    inlines = [EnrollmentInline]  # Add inline for Enrollment to show Enrollments under Module
+class Module(models.Model):
+    title = models.CharField(max_length=128)
+    module_code = models.CharField(max_length=8)
+    description = models.TextField()
+    students = models.ManyToManyField(Student, through='Enrollment', related_name='lessons')
+    currently_enrolled = models.BooleanField(default=False)
 
-# Admin for Enrollment
-@admin.register(Enrollment)
-class EnrollmentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'module', 'grade_percentage')  # Customize based on your fields
-    list_filter = ('grade_percentage',)  # Filter by grade_percentage
-    search_fields = ('student__first_name', 'student__last_name', 'module__title')  # Search by student first/last name or module title
+    def __str__(self):
+        return self.title
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    grade_percentage = models.CharField(max_length=10, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.student.first_name} {self.student.last_name} enrolled in {self.module.title}"
