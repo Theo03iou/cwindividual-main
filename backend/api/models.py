@@ -3,27 +3,28 @@ from django.db import models
 class Student(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    email = models.EmailField(unique=True)
-    date_of_birth = models.DateField(null=True)
-    year_group = models.CharField(max_length=1)
+    email = models.EmailField()
+    date_of_birth = models.DateField()
+    year_group = models.IntegerField()
 
     def __str__(self):
-        return f"{self.last_name}, {self.first_name}"
+        return f"{self.first_name} {self.last_name}"
 
 class Module(models.Model):
-    title = models.CharField(max_length=128)
-    module_code = models.CharField(max_length=8)
+    name = models.CharField(max_length=100)
     description = models.TextField()
-    students = models.ManyToManyField(Student, through='Enrollment', related_name='lessons')
-    currently_enrolled = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.title
+        return self.name
 
 class Enrollment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     module = models.ForeignKey(Module, on_delete=models.CASCADE)
-    grade_percentage = models.CharField(max_length=10, blank=True, null=True)
+    date_enrolled = models.DateField(auto_now_add=True)
+    grade = models.IntegerField(null=True, blank=True)  # Extra field in the through model
+
+    class Meta:
+        unique_together = ('student', 'module')
 
     def __str__(self):
-        return f"{self.student.first_name} {self.student.last_name} enrolled in {self.module.title}"
+        return f"{self.student} - {self.module}"

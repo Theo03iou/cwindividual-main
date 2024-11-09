@@ -1,102 +1,69 @@
-
-
 <template>
-    <div class="container pt-3">
-      <!-- Header -->
-      <div class="h1 text-center border rounded bg-light p-2 mb-3">
-        API Client
-      </div>
-  
-      <!-- Tab Navigation -->
-      <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item" role="presentation">
-          <a class="nav-link active" id="students-tab" data-bs-toggle="tab" href="#students" role="tab" aria-controls="students" aria-selected="true">Students</a>
-        </li>
-        <li class="nav-item" role="presentation">
-          <a class="nav-link" id="modules-tab" data-bs-toggle="tab" href="#modules" role="tab" aria-controls="modules" aria-selected="false">Modules</a>
-        </li>
-        <li class="nav-item" role="presentation">
-          <a class="nav-link" id="enrollments-tab" data-bs-toggle="tab" href="#enrollments" role="tab" aria-controls="enrollments" aria-selected="false">Enrollments</a>
-        </li>
-      </ul>
-  
-      <!-- Tab Content -->
-      <div class="tab-content mt-3">
-        <!-- Students Tab -->
-        <div class="tab-pane fade show active" id="students" role="tabpanel" aria-labelledby="students-tab">
-          <h3>Students</h3>
-          <button class="btn btn-primary" @click="openStudentModal">Add Student</button>
-          <ul class="list-group mt-3">
-            <li v-for="student in students" :key="student.id" class="list-group-item">
-              {{ student.first_name }} {{ student.last_name }}
-              <button class="btn btn-warning btn-sm float-end" @click="editStudent(student)">Edit</button>
-              <button class="btn btn-danger btn-sm float-end me-2" @click="deleteStudent(student.id)">Delete</button>
-            </li>
-          </ul>
-        </div>
-  
-        <!-- Modules Tab -->
-        <div class="tab-pane fade" id="modules" role="tabpanel" aria-labelledby="modules-tab">
-          <h3>Modules</h3>
-          <button class="btn btn-primary" @click="openModuleModal">Add Module</button>
-          <ul class="list-group mt-3">
-            <li v-for="module in modules" :key="module.id" class="list-group-item">
-              {{ module.title }}
-              <button class="btn btn-warning btn-sm float-end" @click="editModule(module)">Edit</button>
-              <button class="btn btn-danger btn-sm float-end me-2" @click="deleteModule(module.id)">Delete</button>
-            </li>
-          </ul>
-        </div>
-  
-        <!-- Enrollments Tab -->
-        <div class="tab-pane fade" id="enrollments" role="tabpanel" aria-labelledby="enrollments-tab">
-          <h3>Enrollments</h3>
-          <button class="btn btn-primary" @click="openEnrollmentModal">Add Enrollment</button>
-          <ul class="list-group mt-3">
-            <li v-for="enrollment in enrollments" :key="enrollment.id" class="list-group-item">
-              Student: {{ enrollment.student.first_name }} {{ enrollment.student.last_name }}
-              Module: {{ enrollment.module.title }}
-              <button class="btn btn-danger btn-sm float-end" @click="unenroll(enrollment.id)">Unenroll</button>
-            </li>
-          </ul>
+    <div class="container">
+      <!-- List of Students -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h3>Student List</h3>
+          <div v-for="student in students" :key="student.id" class="d-flex justify-content-between align-items-center mb-3">
+            <span>{{ student.first_name }} {{ student.last_name }}</span>
+            <button class="btn btn-danger" @click="deleteStudent(student.id)">Delete</button>
+            <button class="btn btn-primary" @click="editStudent(student)">Edit</button>
+          </div>
         </div>
       </div>
-  
-      <!-- Modal for Adding/Editing Student -->
-      <div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+    
+      <!-- Add New Student Form -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h3>Add New Student</h3>
+          <form @submit.prevent="createStudent">
+            <div class="mb-3">
+              <input v-model="newStudent.first_name" class="form-control" placeholder="First Name" required />
+            </div>
+            <div class="mb-3">
+              <input v-model="newStudent.last_name" class="form-control" placeholder="Last Name" required />
+            </div>
+            <div class="mb-3">
+              <input v-model="newStudent.email" type="email" class="form-control" placeholder="Email" required />
+            </div>
+            <div class="mb-3">
+              <input v-model="newStudent.date_of_birth" type="date" class="form-control" required />
+            </div>
+            <button class="btn btn-success" type="submit">Add Student</button>
+          </form>
+        </div>
+      </div>
+    
+      <!-- Edit Student Modal -->
+      <div v-if="editingStudent" class="modal" tabindex="-1" role="dialog" id="editStudentModal">
+        <div class="modal-dialog" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="studentModalLabel">{{ editingStudent ? 'Edit Student' : 'Add Student' }}</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <h5 class="modal-title">Edit Student</h5>
+              <button type="button" class="close" @click="closeEditModal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
             <div class="modal-body">
-              <form @submit.prevent="submitStudentForm">
+              <form @submit.prevent="updateStudent">
                 <div class="mb-3">
-                  <input v-model="studentForm.first_name" class="form-control" placeholder="First Name" required>
+                  <input v-model="editStudent.first_name" class="form-control" placeholder="First Name" required />
                 </div>
                 <div class="mb-3">
-                  <input v-model="studentForm.last_name" class="form-control" placeholder="Last Name" required>
+                  <input v-model="editStudent.last_name" class="form-control" placeholder="Last Name" required />
                 </div>
                 <div class="mb-3">
-                  <input v-model="studentForm.email" class="form-control" placeholder="Email" required>
+                  <input v-model="editStudent.email" type="email" class="form-control" placeholder="Email" required />
                 </div>
                 <div class="mb-3">
-                  <input v-model="studentForm.date_of_birth" type="date" class="form-control" required>
+                  <input v-model="editStudent.date_of_birth" type="date" class="form-control" required />
                 </div>
-                <div class="mb-3">
-                  <input v-model="studentForm.year_group" class="form-control" placeholder="Year Group" required>
-                </div>
-                <button type="submit" class="btn btn-primary">{{ editingStudent ? 'Update' : 'Create' }}</button>
+                <button class="btn btn-primary" type="submit">Update Student</button>
               </form>
             </div>
           </div>
         </div>
       </div>
-  
-      <!-- Modal for Adding/Editing Module (similar structure to student modal) -->
-  
-      <!-- Modal for Adding/Editing Enrollment (similar structure to student modal) -->
     </div>
   </template>
   
@@ -104,86 +71,96 @@
   export default {
     data() {
       return {
-        students: [],
-        modules: [],
-        enrollments: [],
-        studentForm: {
+        students: [],  // List of students
+        newStudent: {  // Data for a new student
           first_name: '',
           last_name: '',
           email: '',
-          date_of_birth: '',
-          year_group: ''
+          date_of_birth: ''
         },
-        editingStudent: false,
-        studentIdToEdit: null,
-        // Similar form data for modules and enrollments
-      }
-    },
-    async mounted() {
-      await this.fetchStudents();
-      await this.fetchModules();
-      await this.fetchEnrollments();
+        editStudent: null,  // Student currently being edited
+        editingStudent: false, // Flag to control the modal visibility
+      };
     },
     methods: {
-      // Fetch data for Students, Modules, Enrollments
-      async fetchStudents() {
-        const response = await fetch('/students/');
-        this.students = await response.json();
-      },
-      async fetchModules() {
-        const response = await fetch('/modules/');
-        this.modules = await response.json();
-      },
-      async fetchEnrollments() {
-        const response = await fetch('/enrollments/');
-        this.enrollments = await response.json();
-      },
-  
-      // Student CRUD Methods
-      openStudentModal() {
-        this.editingStudent = false;
-        this.studentForm = { first_name: '', last_name: '', email: '', date_of_birth: '', year_group: '' };
-        new bootstrap.Modal(document.getElementById('studentModal')).show();
-      },
-      async submitStudentForm() {
-        if (this.editingStudent) {
-          // PUT request to update student
-          await fetch(`/students/${this.studentIdToEdit}/update/`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(this.studentForm)
+      fetchStudents() {
+        fetch('/api/students/')
+          .then(response => response.json())
+          .then(data => {
+            this.students = data;
+          })
+          .catch(error => {
+            alert('Error fetching students: ' + error.message);
           });
-        } else {
-          // POST request to create student
-          await fetch('/students/create/', {
+      },
+      createStudent() {
+        if (this.newStudent.first_name && this.newStudent.last_name && this.newStudent.email && this.newStudent.date_of_birth) {
+          fetch('/api/students/create/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(this.studentForm)
-          });
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(this.newStudent)
+          })
+            .then(response => response.json())
+            .then(data => {
+              this.students.push(data);
+              this.newStudent = { first_name: '', last_name: '', email: '', date_of_birth: '' }; // Reset form
+              alert('Student added successfully');
+            })
+            .catch(error => {
+              alert('Error adding student: ' + error.message);
+            });
+        } else {
+          alert('Please fill all fields.');
         }
-        this.fetchStudents();
-        this.closeModals();
       },
-      async editStudent(student) {
+      deleteStudent(id) {
+        if (confirm('Are you sure you want to delete this student?')) {
+          fetch(`/api/students/${id}/delete/`, {
+            method: 'DELETE'
+          })
+            .then(() => {
+              this.students = this.students.filter(student => student.id !== id);
+              alert('Student deleted');
+            })
+            .catch(error => {
+              alert('Error deleting student: ' + error.message);
+            });
+        }
+      },
+      editStudent(student) {
+        this.editStudent = { ...student }; // Copy the student data for editing
         this.editingStudent = true;
-        this.studentForm = { ...student };
-        this.studentIdToEdit = student.id;
-        new bootstrap.Modal(document.getElementById('studentModal')).show();
       },
-      async deleteStudent(id) {
-        await fetch(`/students/${id}/delete/`, { method: 'DELETE' });
-        this.fetchStudents();
+      updateStudent() {
+        fetch(`/api/students/${this.editStudent.id}/update/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.editStudent)
+        })
+          .then(response => response.json())
+          .then(data => {
+            const index = this.students.findIndex(student => student.id === this.editStudent.id);
+            this.students.splice(index, 1, data); // Update student in list
+            this.closeEditModal();
+            alert('Student updated');
+          })
+          .catch(error => {
+            alert('Error updating student: ' + error.message);
+          });
       },
-  
-      // Similar methods for Modules and Enrollments (add, edit, delete)
-      // Make sure to define methods for modules and enrollments CRUD like the student methods above.
-  
-      closeModals() {
-        const modal = new bootstrap.Modal(document.getElementById('studentModal'));
-        modal.hide();
+      closeEditModal() {
+        this.editingStudent = false;
+        this.editStudent = null;
       }
+    },
+    mounted() {
+      this.fetchStudents();
     }
-  }
+  };
   </script>
   
   <style scoped>

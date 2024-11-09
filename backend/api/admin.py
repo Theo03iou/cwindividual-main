@@ -16,9 +16,12 @@ class StudentAdmin(admin.ModelAdmin):
     inlines = [EnrollmentInline]
 
 # Admin for Module
-@admin.register(Module)
 class ModuleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'module_code', 'currently_enrolled')
+    list_display = ('title', 'module_code', 'description', 'get_currently_enrolled')
     list_filter = ('currently_enrolled',)
-    search_fields = ('title', 'module_code', 'description')
-    inlines = [EnrollmentInline]
+
+    def get_currently_enrolled(self, obj):
+        return 'Yes' if obj.currently_enrolled else 'No'
+    get_currently_enrolled.short_description = 'Currently Enrolled'
+
+admin.site.register(Module, ModuleAdmin)
