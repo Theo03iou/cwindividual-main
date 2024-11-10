@@ -83,21 +83,41 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="isEditing ? updateEntry() : addEntry()">
-              <!-- Dynamic Form Inputs -->
-              <div v-for="(value, key) in form" :key="key" class="mb-3">
-                <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
-                <input v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
-              </div>
-              <button type="submit" class="btn btn-success">{{ isEditing ? 'Update' : 'Add' }}</button>
-            </form>
+                    <form @submit.prevent="isEditing ? updateEntry() : addEntry()">
+          <div v-for="(value, key) in form" :key="`enrollment-${key}`" class="mb-3" v-if="currentEntity === 'enrollment'">
+            <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
+            
+            <select v-if="key === 'student_id'" v-model="form.student_id" id="key" class="form-control" required>
+              <option value="" disabled>Select a student</option>
+              <option v-for="student in students" :key="`student-${student.student_id}`" :value="student.student_id">
+                {{ student.first_name }} {{ student.last_name }}
+              </option>
+            </select>
+
+            <select v-else-if="key === 'module_id'" v-model="form.module_id" id="key" class="form-control" required>
+              <option value="" disabled>Select a module</option>
+              <option v-for="module in modules" :key="`module-${module.id}`" :value="module.id">
+                {{ module.module_code }} - {{ module.name }}
+              </option>
+            </select>
+
+            <input v-else v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
+          </div>
+
+          <div v-else v-for="(value, key) in form" :key="`form-${key}`" class="mb-3">
+            <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
+            <input v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
+          </div>
+
+          <button type="submit" class="btn btn-success">{{ isEditing ? 'Update' : 'Add' }}</button>
+        </form>
+
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
 <script>
 import { Modal } from 'bootstrap';
 
@@ -180,8 +200,7 @@ export default {
       } catch (error) {
         console.error(`Failed to delete ${entity}:`, error);
       }
-    }
-    ,
+    },
     resetForm(entity) {
       this.currentEntity = entity;
       this.form = {};
