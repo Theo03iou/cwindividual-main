@@ -22,7 +22,7 @@
         <button class="btn btn-primary mb-3" @click="showModal('student')">Add Student</button>
         <ul class="list-group">
           <li class="list-group-item d-flex justify-content-between align-items-center" v-for="student in students" :key="student.id">
-            {{ student.first_name }} {{ student.last_name }}
+            {{ student.student_id }} - {{ student.first_name }} {{ student.last_name }}
             <div>
               <button class="btn btn-warning btn-sm" @click="editEntry('student', student)">Edit</button>
               <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('student', student.id)">Delete</button>
@@ -130,47 +130,50 @@ export default {
       modal.show();
     },
     async addEntry() {
-  try {
-    const response = await fetch(`/api/${this.currentEntity}s/create/`, { // Append 's' for plural form
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(this.form),
-    });
-    if (!response.ok) throw new Error('Failed to add entry');
-    this.fetchData(this.currentEntity + 's'); // Fetch plural entity after addition
-    Modal.getInstance(document.getElementById('entryModal')).hide();
-  } catch (error) {
-    console.error(`Failed to add ${this.currentEntity}:`, error);
-  }
-},
-
-async updateEntry() {
-  try {
-    const response = await fetch(`/api/${this.currentEntity}s/${this.currentId}/update/`, { // Append 's' for plural form
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(this.form),
-    });
-    if (!response.ok) throw new Error('Failed to update entry');
-    this.fetchData(this.currentEntity + 's'); // Fetch plural entity after update
-    Modal.getInstance(document.getElementById('entryModal')).hide();
-  } catch (error) {
-    console.error(`Failed to update ${this.currentEntity}:`, error);
-  }
-},
-    async deleteEntry(entity, id) {
       try {
-        const response = await fetch(`/api/${entity}/${id}/delete/`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Failed to delete entry');
-        this.fetchData(entity);
+        const response = await fetch(`/api/${this.currentEntity}s/create/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form),
+        });
+        if (!response.ok) throw new Error('Failed to add entry');
+        this.fetchData(this.currentEntity + 's');
+        Modal.getInstance(document.getElementById('entryModal')).hide();
       } catch (error) {
-        console.error(`Failed to delete ${entity}:`, error);
+        console.error(`Failed to add ${this.currentEntity}:`, error);
       }
     },
+    async updateEntry() {
+      try {
+        const response = await fetch(`/api/${this.currentEntity}s/${this.currentId}/update/`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form),
+        });
+        if (!response.ok) throw new Error('Failed to update entry');
+        this.fetchData(this.currentEntity + 's');
+        Modal.getInstance(document.getElementById('entryModal')).hide();
+      } catch (error) {
+        console.error(`Failed to update ${this.currentEntity}:`, error);
+      }
+    },
+    async deleteEntry(entity, id) {
+  try {
+    const response = await fetch(`/api/${entity}s/${id}/delete/`, { // Ensure proper endpoint URL
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete entry');
+    this.fetchData(entity + 's'); // Ensure correct plural entity fetching
+  } catch (error) {
+    console.error(`Failed to delete ${entity}:`, error);
+  }
+}
+,
     resetForm(entity) {
       this.currentEntity = entity;
       if (entity === 'student') {
         this.form = {
+          student_id: '', // New field for Student ID
           first_name: '',
           last_name: '',
           email: '',

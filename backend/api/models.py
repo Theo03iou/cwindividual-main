@@ -7,9 +7,10 @@ class Student(models.Model):
     email = models.EmailField()
     date_of_birth = models.DateField()
     year_group = models.IntegerField()
+    student_id = models.CharField(max_length=13, unique=True)  # New field
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.first_name} {self.last_name} ({self.student_id})"
 
 class Module(models.Model):
     name = models.CharField(max_length=100)

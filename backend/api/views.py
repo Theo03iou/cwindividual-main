@@ -39,31 +39,48 @@ def student_detail(request, student_id):
 @require_http_methods(["POST"])
 def create_student(request):
     """Create a new student."""
-    data = json.loads(request.body)
-    student = Student.objects.create(
-        first_name=data['first_name'],
-        last_name=data['last_name'],
-        email=data['email'],
-        date_of_birth=data['date_of_birth'],
-        year_group=data['year_group']
-    )
-    return JsonResponse({'message': 'Student created', 'id': student.id}, status=201)
+    try:
+        data = json.loads(request.body)
+        required_fields = ['first_name', 'last_name', 'email', 'date_of_birth', 'year_group', 'student_id']
+        missing_fields = [field for field in required_fields if field not in data]
+
+        if missing_fields:
+            return JsonResponse({'error': f'Missing fields: {", ".join(missing_fields)}'}, status=400)
+
+        student = Student.objects.create(
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+            date_of_birth=data['date_of_birth'],
+            year_group=data['year_group'],
+            student_id=data['student_id']
+        )
+        return JsonResponse({'message': 'Student created successfully', 'id': student.id}, status=201)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
 
 @csrf_exempt
 @require_http_methods(["PUT"])
 def update_student(request, student_id):
-    """Update an existing student."""
-    data = json.loads(request.body)
-    student = handle_object_not_found(Student, student_id, 'Student')
-    if isinstance(student, JsonResponse):
-        return student
-    student.first_name = data.get('first_name', student.first_name)
-    student.last_name = data.get('last_name', student.last_name)
-    student.email = data.get('email', student.email)
-    student.date_of_birth = data.get('date_of_birth', student.date_of_birth)
-    student.year_group = data.get('year_group', student.year_group)
-    student.save()
-    return JsonResponse({'message': 'Student updated successfully'})
+    """Update a student record."""
+    try:
+        data = json.loads(request.body)
+        student = Student.objects.get(id=student_id)
+
+        student.first_name = data.get('first_name', student.first_name)
+        student.last_name = data.get('last_name', student.last_name)
+        student.email = data.get('email', student.email)
+        student.date_of_birth = data.get('date_of_birth', student.date_of_birth)
+        student.year_group = data.get('year_group', student.year_group)
+        student.student_id = data.get('student_id', student.student_id)  # Update student_id
+        student.save()
+
+        return JsonResponse({'message': 'Student updated successfully'})
+    except Student.DoesNotExist:
+        return JsonResponse({'error': 'Student not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
