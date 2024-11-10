@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Student, Module, Enrollment
 
-
 # Inline for Enrollment, to be used within Student and Module Admin pages
 class EnrollmentInline(admin.TabularInline):
     model = Enrollment
@@ -10,23 +9,20 @@ class EnrollmentInline(admin.TabularInline):
     readonly_fields = ('date_enrolled',)
     raw_id_fields = ('module',)  # To make selection easier in the dropdown
 
-
 # Admin for Student
-@admin.register(Student)
+@admin.register(Student)  # Ensure Student is registered
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'first_name', 'last_name', 'email', 'date_of_birth', 'year_group')
+    list_display = ('student_id', 'first_name', 'last_name', 'email', 'date_of_birth', 'year_group')
     list_filter = ('year_group', 'date_of_birth')
-    search_fields = ('first_name', 'last_name', 'email')
-    inlines = [EnrollmentInline]  # Allows viewing and editing enrollments from the Student page
-
+    search_fields = ('student_id', 'first_name', 'last_name', 'email')
+    inlines = [EnrollmentInline]
 
 # Admin for Module
-@admin.register(Module)
+@admin.register(Module)  # Ensure Module is registered
 class ModuleAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'module_code', 'description')
     search_fields = ('name', 'module_code')
-    inlines = [EnrollmentInline]  # Allows viewing and editing enrollments from the Module page
-
+    inlines = [EnrollmentInline]
 
 # # Admin for Enrollment (optional, for standalone management if needed)
 # @admin.register(Enrollment)

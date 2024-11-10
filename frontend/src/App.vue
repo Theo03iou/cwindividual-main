@@ -21,11 +21,15 @@
         <h2>Students</h2>
         <button class="btn btn-primary mb-3" @click="showModal('student')">Add Student</button>
         <ul class="list-group">
-          <li class="list-group-item d-flex justify-content-between align-items-center" v-for="student in students" :key="student.id">
-            {{ student.student_id }} - {{ student.first_name }} {{ student.last_name }}
+          <li
+            class="list-group-item d-flex justify-content-between align-items-center"
+            v-for="student in students"
+            :key="student.student_id"
+          >
+            {{ student.first_name }} {{ student.last_name }}
             <div>
               <button class="btn btn-warning btn-sm" @click="editEntry('student', student)">Edit</button>
-              <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('student', student.id)">Delete</button>
+              <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('student', student.student_id)">Delete</button>
             </div>
           </li>
         </ul>
@@ -36,7 +40,11 @@
         <h2>Modules</h2>
         <button class="btn btn-primary mb-3" @click="showModal('module')">Add Module</button>
         <ul class="list-group">
-          <li class="list-group-item d-flex justify-content-between align-items-center" v-for="module in modules" :key="module.id">
+          <li
+            class="list-group-item d-flex justify-content-between align-items-center"
+            v-for="module in modules"
+            :key="module.id"
+          >
             {{ module.module_code }} - {{ module.name }}
             <div>
               <button class="btn btn-warning btn-sm" @click="editEntry('module', module)">Edit</button>
@@ -51,7 +59,11 @@
         <h2>Enrollments</h2>
         <button class="btn btn-primary mb-3" @click="showModal('enrollment')">Add Enrollment</button>
         <ul class="list-group">
-          <li class="list-group-item d-flex justify-content-between align-items-center" v-for="enrollment in enrollments" :key="enrollment.id">
+          <li
+            class="list-group-item d-flex justify-content-between align-items-center"
+            v-for="enrollment in enrollments"
+            :key="enrollment.id"
+          >
             {{ enrollment.student_name }} enrolled in {{ enrollment.module_name }} (Grade: {{ enrollment.grade }})
             <div>
               <button class="btn btn-warning btn-sm" @click="editEntry('enrollment', enrollment)">Edit</button>
@@ -87,7 +99,7 @@
 </template>
 
 <script>
-import { Modal } from 'bootstrap'; // Import Modal directly
+import { Modal } from 'bootstrap';
 
 export default {
   data() {
@@ -95,20 +107,23 @@ export default {
       students: [],
       modules: [],
       enrollments: [],
-      form: {}, // Dynamic form object
+      form: {},
       isEditing: false,
-      currentEntity: '', // 'student', 'module', or 'enrollment'
+      currentEntity: '',
       modalTitle: '',
-      currentId: null, // ID of the entry being edited
+      currentId: null,
     };
   },
   methods: {
     async fetchData(entity) {
       try {
-        const response = await fetch(`/api/${entity}/`);
-        this[entity] = await response.json();
+        const response = await fetch(`/api/${entity}s/`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${entity}s`);
+        }
+        this[entity + 's'] = await response.json();
       } catch (error) {
-        console.error(`Failed to fetch ${entity}:`, error);
+        console.error(`Failed to fetch ${entity}s:`, error);
       }
     },
     showModal(entity) {
@@ -116,17 +131,17 @@ export default {
       this.modalTitle = this.capitalize(entity);
       this.isEditing = false;
 
-      const modal = new Modal(document.getElementById('entryModal'));
+      const modal = Modal.getOrCreateInstance(document.getElementById('entryModal'));
       modal.show();
     },
     editEntry(entity, entry) {
       this.form = { ...entry };
-      this.currentId = entry.id;
+      this.currentId = entry.student_id || entry.id; // Handles both students and modules
       this.currentEntity = entity;
-      this.modalTitle = this.capitalize(entity);
+      this.modalTitle = `Edit ${this.capitalize(entity)}`;
       this.isEditing = true;
 
-      const modal = new Modal(document.getElementById('entryModal'));
+      const modal = Modal.getOrCreateInstance(document.getElementById('entryModal'));
       modal.show();
     },
     async addEntry() {
@@ -137,7 +152,7 @@ export default {
           body: JSON.stringify(this.form),
         });
         if (!response.ok) throw new Error('Failed to add entry');
-        this.fetchData(this.currentEntity + 's');
+        this.fetchData(this.currentEntity); // Refresh list
         Modal.getInstance(document.getElementById('entryModal')).hide();
       } catch (error) {
         console.error(`Failed to add ${this.currentEntity}:`, error);
@@ -151,29 +166,28 @@ export default {
           body: JSON.stringify(this.form),
         });
         if (!response.ok) throw new Error('Failed to update entry');
-        this.fetchData(this.currentEntity + 's');
+        this.fetchData(this.currentEntity); // Refresh list
         Modal.getInstance(document.getElementById('entryModal')).hide();
       } catch (error) {
         console.error(`Failed to update ${this.currentEntity}:`, error);
       }
     },
     async deleteEntry(entity, id) {
-  try {
-    const response = await fetch(`/api/${entity}s/${id}/delete/`, { // Ensure proper endpoint URL
-      method: 'DELETE',
-    });
-    if (!response.ok) throw new Error('Failed to delete entry');
-    this.fetchData(entity + 's'); // Ensure correct plural entity fetching
-  } catch (error) {
-    console.error(`Failed to delete ${entity}:`, error);
-  }
-}
-,
+      try {
+        const response = await fetch(`/api/${entity}s/${id}/delete/`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`Failed to delete ${entity}`);
+        this.fetchData(entity); // Refresh the list after deletion
+      } catch (error) {
+        console.error(`Failed to delete ${entity}:`, error);
+      }
+    }
+    ,
     resetForm(entity) {
       this.currentEntity = entity;
+      this.form = {};
       if (entity === 'student') {
         this.form = {
-          student_id: '', // New field for Student ID
+          student_id: '',
           first_name: '',
           last_name: '',
           email: '',
@@ -182,8 +196,8 @@ export default {
         };
       } else if (entity === 'module') {
         this.form = {
-          name: '',
           module_code: '',
+          name: '',
           description: '',
         };
       } else if (entity === 'enrollment') {
@@ -205,9 +219,9 @@ export default {
     },
   },
   mounted() {
-    this.fetchData('students');
-    this.fetchData('modules');
-    this.fetchData('enrollments');
+    this.fetchData('student');
+    this.fetchData('module');
+    this.fetchData('enrollment');
   },
 };
 </script>

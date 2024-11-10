@@ -2,12 +2,12 @@ from django.db import models
 from datetime import date
 
 class Student(models.Model):
+    student_id = models.CharField(max_length=9, primary_key=True)  # New field
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField()
     date_of_birth = models.DateField()
     year_group = models.IntegerField()
-    student_id = models.CharField(max_length=13, unique=True)  # New field
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.student_id})"
@@ -21,7 +21,7 @@ class Module(models.Model):
         return self.name
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, to_field='student_id', on_delete=models.CASCADE)    
     module = models.ForeignKey(Module, on_delete=models.CASCADE)
     date_enrolled = models.DateField(auto_now_add=True)  # Use date.today for default
     grade = models.IntegerField(null=True, blank=True)  # Extra field in the through model

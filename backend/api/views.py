@@ -2,13 +2,13 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
 from .models import Student, Module, Enrollment
+from django.core.exceptions import ValidationError
 
-# Utility function to return error for not found objects
-def handle_object_not_found(model, object_id, object_name):
+# Utility function to handle not found objects
+def handle_object_not_found(model, lookup_value, object_name, lookup_field='id'):
     try:
-        return model.objects.get(id=object_id)
+        return model.objects.get(**{lookup_field: lookup_value})
     except model.DoesNotExist:
         return JsonResponse({'error': f'{object_name} not found'}, status=404)
 
@@ -17,17 +17,19 @@ def handle_object_not_found(model, object_id, object_name):
 @require_http_methods(["GET"])
 def student_list(request):
     """Retrieve all students."""
-    students = list(Student.objects.all().values('id', 'first_name', 'last_name', 'email', 'date_of_birth', 'year_group'))
+    students = list(Student.objects.all().values(
+        'student_id', 'first_name', 'last_name', 'email', 'date_of_birth', 'year_group'
+    ))
     return JsonResponse(students, safe=False)
 
 @require_http_methods(["GET"])
 def student_detail(request, student_id):
-    """Retrieve a single student by ID."""
-    student = handle_object_not_found(Student, student_id, 'Student')
+    """Retrieve a single student by student_id."""
+    student = handle_object_not_found(Student, student_id, 'Student', lookup_field='student_id')
     if isinstance(student, JsonResponse):
         return student
     return JsonResponse({
-        'id': student.id,
+        'student_id': student.student_id,
         'first_name': student.first_name,
         'last_name': student.last_name,
         'email': student.email,
@@ -39,54 +41,51 @@ def student_detail(request, student_id):
 @require_http_methods(["POST"])
 def create_student(request):
     """Create a new student."""
+    data = json.loads(request.body)
+    required_fields = ['student_id', 'first_name', 'last_name', 'email', 'date_of_birth', 'year_group']
+    if not all(field in data for field in required_fields):
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+    if len(str(data['student_id'])) != 9:
+        return JsonResponse({'error': 'Student ID must be exactly 9 characters long'}, status=400)
+
     try:
-        data = json.loads(request.body)
-        required_fields = ['first_name', 'last_name', 'email', 'date_of_birth', 'year_group', 'student_id']
-        missing_fields = [field for field in required_fields if field not in data]
-
-        if missing_fields:
-            return JsonResponse({'error': f'Missing fields: {", ".join(missing_fields)}'}, status=400)
-
         student = Student.objects.create(
+            student_id=data['student_id'],
             first_name=data['first_name'],
             last_name=data['last_name'],
             email=data['email'],
             date_of_birth=data['date_of_birth'],
-            year_group=data['year_group'],
-            student_id=data['student_id']
+            year_group=data['year_group']
         )
-        return JsonResponse({'message': 'Student created successfully', 'id': student.id}, status=201)
-    except Exception as e:
+        return JsonResponse({'message': 'Student created successfully', 'student_id': student.student_id})
+    except ValidationError as e:
         return JsonResponse({'error': str(e)}, status=400)
-
+    except Exception as e:
+        return JsonResponse({'error': 'Student ID already exists'}, status=400)
 
 @csrf_exempt
 @require_http_methods(["PUT"])
 def update_student(request, student_id):
     """Update a student record."""
-    try:
-        data = json.loads(request.body)
-        student = Student.objects.get(id=student_id)
+    data = json.loads(request.body)
+    student = handle_object_not_found(Student, student_id, 'Student', lookup_field='student_id')
+    if isinstance(student, JsonResponse):
+        return student
+    student.first_name = data.get('first_name', student.first_name)
+    student.last_name = data.get('last_name', student.last_name)
+    student.email = data.get('email', student.email)
+    student.date_of_birth = data.get('date_of_birth', student.date_of_birth)
+    student.year_group = data.get('year_group', student.year_group)
+    student.save()
 
-        student.first_name = data.get('first_name', student.first_name)
-        student.last_name = data.get('last_name', student.last_name)
-        student.email = data.get('email', student.email)
-        student.date_of_birth = data.get('date_of_birth', student.date_of_birth)
-        student.year_group = data.get('year_group', student.year_group)
-        student.student_id = data.get('student_id', student.student_id)  # Update student_id
-        student.save()
-
-        return JsonResponse({'message': 'Student updated successfully'})
-    except Student.DoesNotExist:
-        return JsonResponse({'error': 'Student not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'message': 'Student updated successfully'})
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
 def delete_student(request, student_id):
     """Delete a student."""
-    student = handle_object_not_found(Student, student_id, 'Student')
+    student = handle_object_not_found(Student, student_id, 'Student', lookup_field='student_id')
     if isinstance(student, JsonResponse):
         return student
     student.delete()
@@ -158,7 +157,7 @@ def enrollment_list(request):
     enrollment_data = [
         {
             'id': enrollment.id,
-            'student_id': enrollment.student.id,
+            'student_id': enrollment.student.student_id,
             'student_name': f"{enrollment.student.first_name} {enrollment.student.last_name}",
             'module_id': enrollment.module.id,
             'module_name': enrollment.module.name,
@@ -174,7 +173,7 @@ def enrollment_list(request):
 def create_enrollment(request):
     """Create a new enrollment."""
     data = json.loads(request.body)
-    student = handle_object_not_found(Student, data['student_id'], 'Student')
+    student = handle_object_not_found(Student, data['student_id'], 'Student', lookup_field='student_id')
     if isinstance(student, JsonResponse):
         return student
     module = handle_object_not_found(Module, data['module_id'], 'Module')
@@ -208,3 +207,5 @@ def delete_enrollment(request, enrollment_id):
         return enrollment
     enrollment.delete()
     return JsonResponse({'message': 'Enrollment deleted successfully'})
+
+   
