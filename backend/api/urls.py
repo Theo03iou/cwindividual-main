@@ -2,25 +2,23 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # **Students CRUD**
-    path('api/students/', views.student_list, name='get_students'),  # Fetch all students
-    path('api/students/create/', views.create_student, name='create_student'),  # Create a new student
-    path('api/students/<int:student_id>/', views.student_detail, name='student_detail'),  # Get student details
-    path('api/students/<int:student_id>/update/', views.update_student, name='update_student'),  # Update a student
-    path('api/students/<int:student_id>/delete/', views.delete_student, name='delete_student'),  # Delete a student
-
-    # **Modules CRUD**
-    path('api/modules/', views.module_list, name='get_modules'),  # Fetch all modules
-    path('api/modules/create/', views.create_module, name='create_module'),  # Create a new module
-    path('api/modules/<int:module_id>/', views.module_detail, name='module_detail'),  # Get module details
-    path('api/modules/<int:module_id>/update/', views.update_module, name='update_module'),  # Update a module
-    path('api/modules/<int:module_id>/delete/', views.delete_module, name='delete_module'),  # Delete a module
-
-    # **Enrollments CRUD**
-    path('api/enrollments/', views.get_enrollments, name='get_enrollments'),  # Fetch all enrollments
-    path('api/enrollments/create/', views.create_enrollment, name='create_enrollment'),  # Create an enrollment
-    path('api/enrollments/<int:student_id>/<int:module_id>/unenroll/', views.unenroll, name='unenroll'),  # Unenroll a student from a module
-
-    # **Existing Views (Enrollment related)**
-    path('api/students/<int:student_id>/modules/<int:module_id>/update/', views.update_enrollment, name='update_enrollment'),  # Update enrollment (e.g., grade) for a student in a specific module
+    # Student endpoints
+    path('students/', views.student_list, name='student_list'),  # GET all students
+    path('students/<int:student_id>/', views.student_detail, name='student_detail'),  # GET a specific student
+    path('students/create/', views.create_student, name='create_student'),  # POST to create a new student
+    path('students/<int:student_id>/update/', views.update_student, name='update_student'),  # PUT to update a student
+    path('students/<int:student_id>/delete/', views.delete_student, name='delete_student'),  # DELETE a student
+    
+    # Module endpoints
+    path('modules/', views.module_list, name='module_list'),  # GET all modules
+    path('modules/<int:module_id>/', views.module_detail, name='module_detail'),  # GET a specific module
+    path('modules/create/', views.create_module, name='create_module'),  # POST to create a new module
+    path('modules/<int:module_id>/update/', views.update_module, name='update_module'),  # PUT to update a module
+    path('modules/<int:module_id>/delete/', views.delete_module, name='delete_module'),  # DELETE a module
+    
+    # Enrollment endpoints
+    path('enrollments/', views.enrollment_list, name='enrollment_list'),  # GET all enrollments
+    path('enrollments/create/', views.create_enrollment, name='create_enrollment'),  # POST to create a new enrollment
+    path('enrollments/<int:enrollment_id>/update/', views.update_enrollment, name='update_enrollment'),  # PUT to update an enrollment
+    path('enrollments/<int:enrollment_id>/delete/', views.delete_enrollment, name='delete_enrollment'),  # DELETE an enrollment
 ]

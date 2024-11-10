@@ -1,169 +1,216 @@
 <template>
-    <div class="container">
-      <!-- List of Students -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <h3>Student List</h3>
-          <div v-for="student in students" :key="student.id" class="d-flex justify-content-between align-items-center mb-3">
-            <span>{{ student.first_name }} {{ student.last_name }}</span>
-            <button class="btn btn-danger" @click="deleteStudent(student.id)">Delete</button>
-            <button class="btn btn-primary" @click="editStudent(student)">Edit</button>
+  <div class="container mt-4">
+    <h1 class="text-center">University Management System</h1>
+
+    <!-- Bootstrap Tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#students" role="tab">Students</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#modules" role="tab">Modules</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#enrollments" role="tab">Enrollments</a>
+      </li>
+    </ul>
+
+    <div class="tab-content mt-3">
+      <!-- Students Tab -->
+      <div class="tab-pane fade show active" id="students" role="tabpanel">
+        <h2>Students</h2>
+        <button class="btn btn-primary mb-3" @click="showModal('student')">Add Student</button>
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" v-for="student in students" :key="student.id">
+            {{ student.first_name }} {{ student.last_name }}
+            <div>
+              <button class="btn btn-warning btn-sm" @click="editEntry('student', student)">Edit</button>
+              <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('student', student.id)">Delete</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Modules Tab -->
+      <div class="tab-pane fade" id="modules" role="tabpanel">
+        <h2>Modules</h2>
+        <button class="btn btn-primary mb-3" @click="showModal('module')">Add Module</button>
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" v-for="module in modules" :key="module.id">
+            {{ module.module_code }} - {{ module.name }}
+            <div>
+              <button class="btn btn-warning btn-sm" @click="editEntry('module', module)">Edit</button>
+              <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('module', module.id)">Delete</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Enrollments Tab -->
+      <div class="tab-pane fade" id="enrollments" role="tabpanel">
+        <h2>Enrollments</h2>
+        <button class="btn btn-primary mb-3" @click="showModal('enrollment')">Add Enrollment</button>
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" v-for="enrollment in enrollments" :key="enrollment.id">
+            {{ enrollment.student_name }} enrolled in {{ enrollment.module_name }} (Grade: {{ enrollment.grade }})
+            <div>
+              <button class="btn btn-warning btn-sm" @click="editEntry('enrollment', enrollment)">Edit</button>
+              <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('enrollment', enrollment.id)">Delete</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Modal for Adding and Editing -->
+    <div class="modal fade" tabindex="-1" id="entryModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ isEditing ? 'Edit' : 'Add' }} {{ modalTitle }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-        </div>
-      </div>
-    
-      <!-- Add New Student Form -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <h3>Add New Student</h3>
-          <form @submit.prevent="createStudent">
-            <div class="mb-3">
-              <input v-model="newStudent.first_name" class="form-control" placeholder="First Name" required />
-            </div>
-            <div class="mb-3">
-              <input v-model="newStudent.last_name" class="form-control" placeholder="Last Name" required />
-            </div>
-            <div class="mb-3">
-              <input v-model="newStudent.email" type="email" class="form-control" placeholder="Email" required />
-            </div>
-            <div class="mb-3">
-              <input v-model="newStudent.date_of_birth" type="date" class="form-control" required />
-            </div>
-            <button class="btn btn-success" type="submit">Add Student</button>
-          </form>
-        </div>
-      </div>
-    
-      <!-- Edit Student Modal -->
-      <div v-if="editingStudent" class="modal" tabindex="-1" role="dialog" id="editStudentModal">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Edit Student</h5>
-              <button type="button" class="close" @click="closeEditModal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              <form @submit.prevent="updateStudent">
-                <div class="mb-3">
-                  <input v-model="editStudent.first_name" class="form-control" placeholder="First Name" required />
-                </div>
-                <div class="mb-3">
-                  <input v-model="editStudent.last_name" class="form-control" placeholder="Last Name" required />
-                </div>
-                <div class="mb-3">
-                  <input v-model="editStudent.email" type="email" class="form-control" placeholder="Email" required />
-                </div>
-                <div class="mb-3">
-                  <input v-model="editStudent.date_of_birth" type="date" class="form-control" required />
-                </div>
-                <button class="btn btn-primary" type="submit">Update Student</button>
-              </form>
-            </div>
+          <div class="modal-body">
+            <form @submit.prevent="isEditing ? updateEntry() : addEntry()">
+              <!-- Dynamic Form Inputs -->
+              <div v-for="(value, key) in form" :key="key" class="mb-3">
+                <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
+                <input v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
+              </div>
+              <button type="submit" class="btn btn-success">{{ isEditing ? 'Update' : 'Add' }}</button>
+            </form>
           </div>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        students: [],  // List of students
-        newStudent: {  // Data for a new student
+  </div>
+</template>
+
+<script>
+import { Modal } from 'bootstrap'; // Import Modal directly
+
+export default {
+  data() {
+    return {
+      students: [],
+      modules: [],
+      enrollments: [],
+      form: {}, // Dynamic form object
+      isEditing: false,
+      currentEntity: '', // 'student', 'module', or 'enrollment'
+      modalTitle: '',
+      currentId: null, // ID of the entry being edited
+    };
+  },
+  methods: {
+    async fetchData(entity) {
+      try {
+        const response = await fetch(`/api/${entity}/`);
+        this[entity] = await response.json();
+      } catch (error) {
+        console.error(`Failed to fetch ${entity}:`, error);
+      }
+    },
+    showModal(entity) {
+      this.resetForm(entity);
+      this.modalTitle = this.capitalize(entity);
+      this.isEditing = false;
+
+      const modal = new Modal(document.getElementById('entryModal'));
+      modal.show();
+    },
+    editEntry(entity, entry) {
+      this.form = { ...entry };
+      this.currentId = entry.id;
+      this.currentEntity = entity;
+      this.modalTitle = this.capitalize(entity);
+      this.isEditing = true;
+
+      const modal = new Modal(document.getElementById('entryModal'));
+      modal.show();
+    },
+    async addEntry() {
+  try {
+    const response = await fetch(`/api/${this.currentEntity}s/create/`, { // Append 's' for plural form
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.form),
+    });
+    if (!response.ok) throw new Error('Failed to add entry');
+    this.fetchData(this.currentEntity + 's'); // Fetch plural entity after addition
+    Modal.getInstance(document.getElementById('entryModal')).hide();
+  } catch (error) {
+    console.error(`Failed to add ${this.currentEntity}:`, error);
+  }
+},
+
+async updateEntry() {
+  try {
+    const response = await fetch(`/api/${this.currentEntity}s/${this.currentId}/update/`, { // Append 's' for plural form
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.form),
+    });
+    if (!response.ok) throw new Error('Failed to update entry');
+    this.fetchData(this.currentEntity + 's'); // Fetch plural entity after update
+    Modal.getInstance(document.getElementById('entryModal')).hide();
+  } catch (error) {
+    console.error(`Failed to update ${this.currentEntity}:`, error);
+  }
+},
+    async deleteEntry(entity, id) {
+      try {
+        const response = await fetch(`/api/${entity}/${id}/delete/`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to delete entry');
+        this.fetchData(entity);
+      } catch (error) {
+        console.error(`Failed to delete ${entity}:`, error);
+      }
+    },
+    resetForm(entity) {
+      this.currentEntity = entity;
+      if (entity === 'student') {
+        this.form = {
           first_name: '',
           last_name: '',
           email: '',
-          date_of_birth: ''
-        },
-        editStudent: null,  // Student currently being edited
-        editingStudent: false, // Flag to control the modal visibility
-      };
-    },
-    methods: {
-      fetchStudents() {
-        fetch('/api/students/')
-          .then(response => response.json())
-          .then(data => {
-            this.students = data;
-          })
-          .catch(error => {
-            alert('Error fetching students: ' + error.message);
-          });
-      },
-      createStudent() {
-        if (this.newStudent.first_name && this.newStudent.last_name && this.newStudent.email && this.newStudent.date_of_birth) {
-          fetch('/api/students/create/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(this.newStudent)
-          })
-            .then(response => response.json())
-            .then(data => {
-              this.students.push(data);
-              this.newStudent = { first_name: '', last_name: '', email: '', date_of_birth: '' }; // Reset form
-              alert('Student added successfully');
-            })
-            .catch(error => {
-              alert('Error adding student: ' + error.message);
-            });
-        } else {
-          alert('Please fill all fields.');
-        }
-      },
-      deleteStudent(id) {
-        if (confirm('Are you sure you want to delete this student?')) {
-          fetch(`/api/students/${id}/delete/`, {
-            method: 'DELETE'
-          })
-            .then(() => {
-              this.students = this.students.filter(student => student.id !== id);
-              alert('Student deleted');
-            })
-            .catch(error => {
-              alert('Error deleting student: ' + error.message);
-            });
-        }
-      },
-      editStudent(student) {
-        this.editStudent = { ...student }; // Copy the student data for editing
-        this.editingStudent = true;
-      },
-      updateStudent() {
-        fetch(`/api/students/${this.editStudent.id}/update/`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.editStudent)
-        })
-          .then(response => response.json())
-          .then(data => {
-            const index = this.students.findIndex(student => student.id === this.editStudent.id);
-            this.students.splice(index, 1, data); // Update student in list
-            this.closeEditModal();
-            alert('Student updated');
-          })
-          .catch(error => {
-            alert('Error updating student: ' + error.message);
-          });
-      },
-      closeEditModal() {
-        this.editingStudent = false;
-        this.editStudent = null;
+          date_of_birth: '',
+          year_group: '',
+        };
+      } else if (entity === 'module') {
+        this.form = {
+          name: '',
+          module_code: '',
+          description: '',
+        };
+      } else if (entity === 'enrollment') {
+        this.form = {
+          student_id: '',
+          module_id: '',
+          grade: '',
+        };
       }
     },
-    mounted() {
-      this.fetchStudents();
-    }
-  };
-  </script>
-  
-  <style scoped>
-  /* Add custom styling here if needed */
-  </style>
-  
+    capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+    formatLabel(key) {
+      return key.replace(/_/g, ' ').toUpperCase();
+    },
+    getInputType(key) {
+      return key.includes('date') ? 'date' : key.includes('email') ? 'email' : 'text';
+    },
+  },
+  mounted() {
+    this.fetchData('students');
+    this.fetchData('modules');
+    this.fetchData('enrollments');
+  },
+};
+</script>
+
+<style scoped>
+.container {
+  max-width: 900px;
+}
+</style>
