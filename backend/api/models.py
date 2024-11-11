@@ -20,11 +20,12 @@ class Module(models.Model):
     def __str__(self):
         return self.name
 
+# models.py
+
 class Enrollment(models.Model):
-    student = models.ForeignKey(Student, to_field='student_id', on_delete=models.CASCADE)    
+    student = models.ForeignKey(Student, to_field='student_id', on_delete=models.CASCADE)
     module = models.ForeignKey(Module, on_delete=models.CASCADE)
-    date_enrolled = models.DateField(auto_now_add=True)  # Use date.today for default
-    grade = models.IntegerField(null=True, blank=True)  # Extra field in the through model
+    date_enrolled = models.DateField(auto_now_add=True)
 
     class Meta:
         unique_together = ('student', 'module')

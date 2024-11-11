@@ -64,7 +64,7 @@
             v-for="enrollment in enrollments"
             :key="enrollment.id"
           >
-            {{ enrollment.student_name }} enrolled in {{ enrollment.module_name }} (Grade: {{ enrollment.grade }})
+            {{ enrollment.student_name }} enrolled in {{ enrollment.module_name }}
             <div>
               <button class="btn btn-warning btn-sm" @click="editEntry('enrollment', enrollment)">Edit</button>
               <button class="btn btn-danger btn-sm ms-2" @click="deleteEntry('enrollment', enrollment.id)">Delete</button>
@@ -83,35 +83,32 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-                    <form @submit.prevent="isEditing ? updateEntry() : addEntry()">
-          <div v-for="(value, key) in form" :key="`enrollment-${key}`" class="mb-3" v-if="currentEntity === 'enrollment'">
-            <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
-            
-            <select v-if="key === 'student_id'" v-model="form.student_id" id="key" class="form-control" required>
-              <option value="" disabled>Select a student</option>
-              <option v-for="student in students" :key="`student-${student.student_id}`" :value="student.student_id">
-                {{ student.first_name }} {{ student.last_name }}
-              </option>
-            </select>
+            <form @submit.prevent="isEditing ? updateEntry() : addEntry()">
+              <div v-for="(value, key) in form" :key="`enrollment-${key}`" class="mb-3" v-if="currentEntity === 'enrollment'">
+                <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
 
-            <select v-else-if="key === 'module_id'" v-model="form.module_id" id="key" class="form-control" required>
-              <option value="" disabled>Select a module</option>
-              <option v-for="module in modules" :key="`module-${module.id}`" :value="module.id">
-                {{ module.module_code }} - {{ module.name }}
-              </option>
-            </select>
+                <select v-if="key === 'student_id'" v-model="form.student_id" id="key" class="form-control" required>
+                  <option value="" disabled>Select a student</option>
+                  <option v-for="student in students" :key="`student-${student.student_id}`" :value="student.student_id">
+                    {{ student.first_name }} {{ student.last_name }}
+                  </option>
+                </select>
 
-            <input v-else v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
-          </div>
+                <select v-else-if="key === 'module_id'" v-model="form.module_id" id="key" class="form-control" required>
+                  <option value="" disabled>Select a module</option>
+                  <option v-for="module in modules" :key="`module-${module.id}`" :value="module.id">
+                    {{ module.module_code }} - {{ module.name }}
+                  </option>
+                </select>
+              </div>
 
-          <div v-else v-for="(value, key) in form" :key="`form-${key}`" class="mb-3">
-            <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
-            <input v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
-          </div>
+              <div v-else v-for="(value, key) in form" :key="`form-${key}`" class="mb-3">
+                <label :for="key" class="form-label">{{ formatLabel(key) }}</label>
+                <input v-model="form[key]" :id="key" :type="getInputType(key)" class="form-control" required />
+              </div>
 
-          <button type="submit" class="btn btn-success">{{ isEditing ? 'Update' : 'Add' }}</button>
-        </form>
-
+              <button type="submit" class="btn btn-success">{{ isEditing ? 'Update' : 'Add' }}</button>
+            </form>
           </div>
         </div>
       </div>
@@ -155,15 +152,24 @@ export default {
       modal.show();
     },
     editEntry(entity, entry) {
-      this.form = { ...entry };
-      this.currentId = entry.student_id || entry.id; // Handles both students and modules
-      this.currentEntity = entity;
-      this.modalTitle = `Edit ${this.capitalize(entity)}`;
-      this.isEditing = true;
+  // Filter out unnecessary fields for enrollment
+  if (entity === 'enrollment') {
+    this.form = {
+      student_id: entry.student_id,
+      module_id: entry.module_id,
+    };
+  } else {
+    this.form = { ...entry };
+  }
 
-      const modal = Modal.getOrCreateInstance(document.getElementById('entryModal'));
-      modal.show();
-    },
+  this.currentId = entry.student_id || entry.id; // Handles both students and modules
+  this.currentEntity = entity;
+  this.modalTitle = `Edit ${this.capitalize(entity)}`;
+  this.isEditing = true;
+
+  const modal = Modal.getOrCreateInstance(document.getElementById('entryModal'));
+  modal.show();
+},
     async addEntry() {
       try {
         const response = await fetch(`/api/${this.currentEntity}s/create/`, {
@@ -223,7 +229,6 @@ export default {
         this.form = {
           student_id: '',
           module_id: '',
-          grade: '',
         };
       }
     },

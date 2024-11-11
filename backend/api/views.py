@@ -161,7 +161,6 @@ def enrollment_list(request):
             'student_name': f"{enrollment.student.first_name} {enrollment.student.last_name}",
             'module_id': enrollment.module.id,
             'module_name': enrollment.module.name,
-            'grade': enrollment.grade,
             'date_enrolled': enrollment.date_enrolled.isoformat()
         }
         for enrollment in enrollments
@@ -182,7 +181,6 @@ def create_enrollment(request):
     enrollment = Enrollment.objects.create(
         student=student,
         module=module,
-        grade=data.get('grade')
     )
     return JsonResponse({'message': 'Enrollment created', 'id': enrollment.id}, status=201)
 
@@ -194,7 +192,6 @@ def update_enrollment(request, enrollment_id):
     enrollment = handle_object_not_found(Enrollment, enrollment_id, 'Enrollment')
     if isinstance(enrollment, JsonResponse):
         return enrollment
-    enrollment.grade = data.get('grade', enrollment.grade)
     enrollment.save()
     return JsonResponse({'message': 'Enrollment updated successfully'})
 
