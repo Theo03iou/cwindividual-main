@@ -2,7 +2,7 @@ from django.db import models
 from datetime import date
 
 class Student(models.Model):
-    student_id = models.CharField(max_length=9, primary_key=True)  # New field
+    student_id = models.CharField(max_length=9, primary_key=True)  
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField()
@@ -14,13 +14,11 @@ class Student(models.Model):
 
 class Module(models.Model):
     name = models.CharField(max_length=100)
-    module_code = models.CharField(max_length=20, unique=True)  # New field for module code
+    module_code = models.CharField(max_length=20, unique=True) 
     description = models.TextField()
     
     def __str__(self):
         return self.name
-
-# models.py
 
 class Enrollment(models.Model):
     student = models.ForeignKey(Student, to_field='student_id', on_delete=models.CASCADE)

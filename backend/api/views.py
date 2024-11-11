@@ -5,15 +5,15 @@ from django.views.decorators.http import require_http_methods
 from .models import Student, Module, Enrollment
 from django.core.exceptions import ValidationError
 
-# Utility function to handle not found objects
+# FOR NOT FOUND OBJECTS
 def handle_object_not_found(model, lookup_value, object_name, lookup_field='id'):
     try:
         return model.objects.get(**{lookup_field: lookup_value})
     except model.DoesNotExist:
         return JsonResponse({'error': f'{object_name} not found'}, status=404)
 
-# --- Student Views ---
 
+# STUDENT VIEWS
 @require_http_methods(["GET"])
 def student_list(request):
     """Retrieve all students."""
@@ -91,7 +91,7 @@ def delete_student(request, student_id):
     student.delete()
     return JsonResponse({'message': 'Student deleted successfully'})
 
-# --- Module Views ---
+# MODULE VIEWS
 
 @require_http_methods(["GET"])
 def module_list(request):
@@ -148,7 +148,7 @@ def delete_module(request, module_id):
     module.delete()
     return JsonResponse({'message': 'Module deleted successfully'})
 
-# --- Enrollment Views ---
+# ENROLLMENT VIEWS
 
 @require_http_methods(["GET"])
 def enrollment_list(request):
